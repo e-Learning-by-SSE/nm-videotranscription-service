@@ -1,1 +1,1 @@
-from routes.routes import routes_bp
+from routes.routes import transcripe_blueprint
