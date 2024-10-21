@@ -1,14 +1,7 @@
 from flask import Blueprint, request, jsonify
 from services.transcription_service import transcribe_audio, transcribe_audio_from_url
-from flask_openapi3 import Tag, FileStorage
-from pydantic import BaseModel, Field
 
 transcripe_blueprint = Blueprint('transcribe', __name__)
-transcribe_tag = Tag(name='transcribe', description='Operations related to transcriptions')
-
-class UploadFileForm(BaseModel):
-    file: FileStorage
-    file_type: str = Field(None, description="File Type")
 
 @transcripe_blueprint.route('/transcribe', methods=['POST'])
 def transcribe():
