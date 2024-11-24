@@ -1,16 +1,13 @@
 import time
 
 from flask import Flask
-from flask_openapi3 import OpenAPI, Info
 from flask_socketio import SocketIO, emit
 
-from routes.routes import transcripe_blueprint
 from services.transcription_service import transcribe_audio_from_url
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-app.register_blueprint(transcripe_blueprint)
 
 
 @socketio.on('transcribe')
