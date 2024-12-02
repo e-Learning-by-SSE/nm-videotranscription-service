@@ -1,1 +1,0 @@
-from routes.routes import transcripe_blueprint
