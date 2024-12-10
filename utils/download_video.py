@@ -2,7 +2,7 @@ import requests
 from flask_socketio import emit
 
 
-def download_video(video_url, save_path):
+def download_video(video_url, save_path, socketio, client_sid):
     response = requests.get(video_url, stream=True)
     total_length = int(response.headers.get('content-length'))
 
@@ -14,6 +14,6 @@ def download_video(video_url, save_path):
                     f.write(chunk)
                     downloaded += len(chunk)
                     percent = int(downloaded / total_length * 100)
-                    emit('progress', {'message': f'Downloading video... {percent}%'})
+                    socketio.emit('progress', {'message': f'Downloading video... {percent}%'}, to=client_sid)
     else:
         raise Exception("Failed to download video")

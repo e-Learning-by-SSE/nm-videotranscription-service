@@ -5,7 +5,7 @@ import tempfile
 from flask_socketio import emit
 
 
-def extract_audio(video_file_path):
+def extract_audio(video_file_path, socketio, client_sid):
     with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_audio:
         audio_file_path = temp_audio.name  # Get the temp file path
 
@@ -37,7 +37,7 @@ def extract_audio(video_file_path):
                     current_time = hours * 3600 + minutes * 60 + seconds
                     percent = (current_time / duration) * 100
                     print(f"Extracting audio... {percent}%")
-                    emit('progress', {'message': f'Extracting audio... {percent}%'})
+                    socketio.emit('progress', {'message': f'Extracting audio... {percent}%'}, to=client_sid)
 
             print(f"Audio extracted successfully to {audio_file_path}")
         except subprocess.CalledProcessError as e:
