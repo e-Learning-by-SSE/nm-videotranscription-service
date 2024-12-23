@@ -8,9 +8,12 @@ import whisper
 from flask import Flask, request
 from flask_socketio import SocketIO, emit
 
+from dotenv import load_dotenv
 from utils.audio_extraction import extract_audio
 from utils.download_video import download_video
 from utils.transcribe import transcribe_audio_with_progress
+
+load_dotenv()
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -46,7 +49,7 @@ def background_task(task_id, video_url, lesson_id, client_sid=None, realtime=Tru
             if realtime and client_sid in tasks and tasks[client_sid].get('active', False):
                 socketio.emit('complete', result, to=client_sid)
             else:
-                backend_url = "http://localhost:4200/api/subtitle/save_subtitle"
+                backend_url = os.getenv('SAVE_SUBTITLE_ENDPOINT')
                 post_result = requests.post(backend_url, json={'task_id': task_id, 'transcription': transcription, 'lessonId': lesson_id})
                 if post_result.status_code == 200:
                     print(f"Task {task_id} completed. Server URL: {backend_url}")
@@ -70,17 +73,15 @@ def background_task(task_id, video_url, lesson_id, client_sid=None, realtime=Tru
 
 @socketio.on('transcribe')
 def handle_transcription(data):
-
-    video_url = data.get('video_url')#
+    video_url = data.get('video_url')
     lesson_id = data.get('lessonId')
-    realtime = data.get('realtime', True);
+    realtime = data.get('realtime', True)
     task_id = data.get('task_id', f"task_{int(time.time())}")
     client_sid = request.sid
 
     if not video_url:
         emit('error', {'message': 'Video URL is required'})
         return
-
 
     tasks[client_sid] = {'task_id': task_id, 'active': True, 'realtime': realtime}
 
