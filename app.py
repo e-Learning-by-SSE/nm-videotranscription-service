@@ -2,6 +2,7 @@ import os
 import tempfile
 import threading
 import time
+import jwt
 
 import requests
 import whisper
@@ -21,7 +22,12 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 tasks = {}
 
 
-
+def verify_token(token):
+    try:
+        decoded = jwt.decode(token, os.getenv("AUTH_SECRET_KEY"), algorithms=["HS256"])
+        return decoded
+    except jwt.InvalidTokenError:
+        return None
 
 def background_task(task_id, video_url, lesson_id, client_sid=None, realtime=True):
     try:
@@ -73,6 +79,12 @@ def background_task(task_id, video_url, lesson_id, client_sid=None, realtime=Tru
 
 @socketio.on('transcribe')
 def handle_transcription(data):
+    token = data.get('bearer_token')
+    decoded_token = verify_token(token)
+    if decoded_token is None:
+        emit('error', {'message': 'Invalid or expired token'})
+        return
+
     video_url = data.get('video_url')
     lesson_id = data.get('lessonId')
     realtime = data.get('realtime', True)
