@@ -29,7 +29,8 @@ def verify_token(token):
     except jwt.InvalidTokenError:
         return None
 
-def background_task(task_id, video_url, lesson_id, client_sid=None, realtime=True):
+
+def background_task(task_id, video_url, lesson_id, token, client_sid=None, realtime=True):
     try:
         with tempfile.TemporaryDirectory() as tmpdirname:
             video_file_path = os.path.join(tmpdirname, "temp_video.mp4")
@@ -43,7 +44,8 @@ def background_task(task_id, video_url, lesson_id, client_sid=None, realtime=Tru
             audio_file_path = extract_audio(video_file_path, client_sid=client_sid, socketio=socketio)
 
             if realtime and client_sid:
-                socketio.emit('progress', {'task_id': task_id, 'message': 'Loading transcription model...'}, to=client_sid)
+                socketio.emit('progress', {'task_id': task_id, 'message': 'Loading transcription model...'},
+                              to=client_sid)
             model = whisper.load_model("small")
 
             if realtime and client_sid:
@@ -56,12 +58,14 @@ def background_task(task_id, video_url, lesson_id, client_sid=None, realtime=Tru
                 socketio.emit('complete', result, to=client_sid)
             else:
                 backend_url = os.getenv('SAVE_SUBTITLE_ENDPOINT')
-                post_result = requests.post(backend_url, json={'task_id': task_id, 'transcription': transcription, 'lessonId': lesson_id})
+                post_result = requests.post(backend_url, json={'task_id': task_id, 'transcription': transcription,
+                                                               'lessonId': lesson_id, 'authorization': token})
                 if post_result.status_code == 200:
                     print(f"Task {task_id} completed. Server URL: {backend_url}")
                 else:
-                    print(f"Task {task_id} completed. Failed to save transcription to server. Server URL: {backend_url}, Status code: {post_result.status_code}"
-                          f"Response: {post_result.text}")
+                    print(
+                        f"Task {task_id} completed. Failed to save transcription to server. Server URL: {backend_url}, Status code: {post_result.status_code}"
+                        f"Response: {post_result.text}")
 
     except Exception as ex:
         error_msg = f"Error processing task {task_id}: {ex} with {video_url} and {lesson_id}. Client SID: {client_sid}. Realtime: {realtime}"
@@ -71,10 +75,6 @@ def background_task(task_id, video_url, lesson_id, client_sid=None, realtime=Tru
     finally:
         if client_sid in tasks:
             del tasks[client_sid]
-
-
-
-
 
 
 @socketio.on('transcribe')
@@ -97,13 +97,13 @@ def handle_transcription(data):
 
     tasks[client_sid] = {'task_id': task_id, 'active': True, 'realtime': realtime}
 
-    thread = threading.Thread(target=background_task, args=(task_id, video_url, lesson_id, client_sid, realtime))
+    thread = threading.Thread(target=background_task, args=(task_id, video_url, lesson_id, token, client_sid, realtime))
     thread.start()
 
     emit('task_started', {'task_id': task_id, 'message': 'Task started'})
 
 
-socketio.on('disconnect')
+@socketio.on('disconnect')
 def handle_disconnect():
     client_sid = request.sid
     if client_sid in tasks:
