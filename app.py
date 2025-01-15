@@ -59,7 +59,7 @@ def background_task(task_id, video_url, lesson_id, token, client_sid=None, realt
             else:
                 backend_url = os.getenv('SAVE_SUBTITLE_ENDPOINT')
                 post_result = requests.post(backend_url, json={'task_id': task_id, 'transcription': transcription,
-                                                               'lessonId': lesson_id, 'authorization': token})
+                                                               'lessonId': lesson_id}, headers={'Authorization': f'Bearer {token}'})
                 if post_result.status_code == 200:
                     print(f"Task {task_id} completed. Server URL: {backend_url}")
                 else:

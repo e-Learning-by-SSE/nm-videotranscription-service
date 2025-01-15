@@ -2,7 +2,6 @@ import re
 import subprocess
 import tempfile
 
-from flask_socketio import emit
 
 
 def extract_audio(video_file_path, socketio, client_sid):
