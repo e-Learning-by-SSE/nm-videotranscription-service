@@ -1,0 +1,14 @@
+from contextlib import contextmanager
+
+@contextmanager
+def capture_whisper_progress(send_progress_fn=None):
+    old_stderr = sys.stderr
+    redirector = WhisperProgressRedirector(
+        original_stream=old_stderr,
+        send_progress_fn=send_progress_fn
+    )
+    sys.stderr = redirector
+    try:
+        yield
+    finally:
+        sys.stderr = old_stderr

@@ -30,6 +30,7 @@ from config import config as app_config
 app_config.validate()
 
 from utils.audio_extraction import extract_audio
+from utils.audio_extraction import has_audio_stream
 from utils.download_video import download_video
 from utils.transcribe import transcribe_audio_with_progress
 
@@ -92,6 +93,21 @@ def send_progress(client_sid: str, task_id: str, message: str, realtime: bool = 
         socketio.emit('progress', {'task_id': task_id, 'message': message}, to=client_sid)
         logger.debug(f"Progress gesendet: {message}")
 
+def create_send_progress(client_sid, task_id, realtime=True):
+    """
+    Erstellt eine Wrapper-Funktion zum Senden von Fortschrittsnachrichten, die in WhisperProgressRedirector verwendet werden kann.
+    Der Vorteil ist, dass für die Verwendung des Wrappers die Argumente client_sid, task_id und realtime nicht mehr an die fremde
+    Komponente übergeben werden müssen -> geringere Kopplung und einfachere Integration in WhisperProgressRedirector.
+    Args:
+        client_sid: Die Session-ID des Clients.
+        task_id: Die ID der aktuellen Aufgabe.
+        realtime: Ob Echtzeit-Updates aktiviert sind.
+    Returns:
+        Eine Funktion, die eine Nachricht entgegennimmt und sie als Fortschrittsupdate sendet.
+    """
+    def send_progress_wrapper(message: str):
+        send_progress(client_sid, task_id, message, realtime)
+    return send_progress_wrapper
 
 def save_transcription_to_backend(
     task_id: str,
@@ -165,25 +181,32 @@ def background_task(
         realtime: Ob Echtzeit-Updates gesendet werden sollen.
     """
     logger.info(f"Task {task_id}: Starte Transkription für {video_url}")
+    send_progress_fn = create_send_progress(client_sid, task_id, realtime)
 
     try:
         with tempfile.TemporaryDirectory() as tmpdirname:
             video_file_path = os.path.join(tmpdirname, "temp_video.mp4")
 
             # Schritt 1: Video herunterladen
-            send_progress(client_sid, task_id, 'Video wird heruntergeladen...', realtime)
+            send_progress_fn('Video wird heruntergeladen...')
             download_video(video_url, video_file_path, client_sid=client_sid, socketio=socketio)
             logger.info(f"Task {task_id}: Video erfolgreich heruntergeladen")
 
             # Schritt 2: Audio extrahieren
-            send_progress(client_sid, task_id, 'Audio wird extrahiert...', realtime)
-            audio_file_path = extract_audio(video_file_path, socketio=socketio, client_sid=client_sid)
-            logger.info(f"Task {task_id}: Audio erfolgreich extrahiert")
+            if has_audio_stream(video_file_path):
+                send_progress_fn('Audio wird extrahiert...')
+                audio_file_path = extract_audio(video_file_path, socketio=socketio, client_sid=client_sid)
+                logger.info(f"Task {task_id}: Audio erfolgreich extrahiert")
+            else:
+                error_msg = "Video enthält keine Audio-Spur."
+                send_progress_fn(error_msg)
+                logger.error(f"Task {task_id}: {error_msg}")
+                return
 
             # Schritt 3: Transkription durchführen (thread-safe mit model_lock)
-            send_progress(client_sid, task_id, 'Transkription läuft...', realtime)
+            send_progress_fn('Transkription läuft...')
             with model_lock:
-                transcription = transcribe_audio_with_progress(MODEL, audio_file_path)
+                transcription = transcribe_audio_with_progress(MODEL, audio_file_path, send_progress_fn=send_progress_fn)
             logger.info(f"Task {task_id}: Transkription erfolgreich abgeschlossen")
 
             # Ergebnis zusammenstellen

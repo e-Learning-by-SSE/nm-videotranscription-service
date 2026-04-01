@@ -51,6 +51,49 @@ def get_video_duration(video_file_path: str) -> float:
         logger.error(f"Ungültiges Dauer-Format: {e}")
         raise
 
+def has_audio_stream(video_file_path: str) -> bool:
+    """
+    Prüft, ob eine Video-Datei mindestens eine Audio-Spur enthält.
+
+    Args:
+        video_file_path: Pfad zur Video-Datei.
+
+    Returns:
+        True, wenn mindestens ein Audio-Stream vorhanden ist, sonst False.
+
+    Raises:
+        FileNotFoundError: Wenn die Datei nicht existiert.
+        RuntimeError: Wenn ffprobe fehlschlägt.
+    """
+    if not os.path.exists(video_file_path):
+        raise FileNotFoundError(f"Datei nicht gefunden: {video_file_path}")
+
+    command = [
+        "ffprobe",
+        "-v", "error",
+        "-select_streams", "a",
+        "-show_entries", "stream=index",
+        "-of", "csv=p=0",
+        video_file_path
+    ]
+
+    result = subprocess.run(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True
+    )
+
+    if result.returncode != 0:
+        logger.error(f"ffprobe-Fehler:\n{result.stderr}")
+        raise RuntimeError(f"ffprobe fehlgeschlagen: {result.stderr}")
+
+    # Wenn stdout leer ist → kein Audio
+    has_audio = bool(result.stdout.strip())
+
+    logger.debug(f"Audio-Stream vorhanden: {has_audio}")
+    return has_audio
+
 
 def extract_audio(
     video_file_path: str,

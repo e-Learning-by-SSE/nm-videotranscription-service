@@ -55,7 +55,8 @@ def extract_segments(result: Dict[str, Any]) -> List[Dict[str, Any]]:
 def transcribe_audio_with_progress(
     model,
     audio_file_path: str,
-    language: Optional[str] = None
+    language: Optional[str] = None,
+    send_progress_fn = None
 ) -> Dict[str, Any]:
     """
     Transkribiert eine Audio-Datei mit dem Whisper-Modell.
@@ -95,7 +96,10 @@ def transcribe_audio_with_progress(
             logger.info(f"Sprache festgelegt: {language}")
 
         # Transkription durchführen
-        result = model.transcribe(audio_file_path, **transcribe_options)
+        with capture_whisper_progress(send_progress_fn=send_progress_fn):
+            result = model.transcribe(audio_file_path, **transcribe_options)
+        if send_progress_fn:
+            send_progress_fn('Transkription abgeschlossen.')
 
         # Ergebnis strukturieren
         transcription = {
