@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 # Flask-Anwendung initialisieren
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins=app_config.CORS_ALLOWED_ORIGINS)
 
 # Thread-safe Dictionary zur Verwaltung aktiver Transkriptions-Tasks
 tasks: Dict[str, Dict[str, Any]] = {}

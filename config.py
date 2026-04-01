@@ -21,6 +21,7 @@ class Config:
     HOST: str = "0.0.0.0"
     PORT: int = 5000
     DEBUG: bool = False
+    CORS_ALLOWED_ORIGINS: list[str] = ["*"]
 
     # Authentifizierung
     AUTH_SECRET_KEY: Optional[str] = None
@@ -53,6 +54,7 @@ class Config:
             DEBUG=os.getenv("DEBUG", "False").lower() == "true",
             AUTH_SECRET_KEY=os.getenv("AUTH_SECRET_KEY"),
             SAVE_SUBTITLE_ENDPOINT=os.getenv("SAVE_SUBTITLE_ENDPOINT"),
+            CORS_ALLOWED_ORIGINS=os.getenv("CORS_ALLOWED_ORIGINS", "*").split(","),
             WHISPER_MODEL=os.getenv("WHISPER_MODEL", "small"),
             DOWNLOAD_CHUNK_SIZE=int(os.getenv("DOWNLOAD_CHUNK_SIZE", "8192")),
             DOWNLOAD_TIMEOUT=int(os.getenv("DOWNLOAD_TIMEOUT", "30")),
