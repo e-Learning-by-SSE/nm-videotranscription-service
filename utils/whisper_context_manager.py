@@ -1,5 +1,6 @@
 import sys
 from contextlib import contextmanager
+from utils.whisper_progress import WhisperProgressRedirector
 
 @contextmanager
 def capture_whisper_progress(send_progress_fn=None):
