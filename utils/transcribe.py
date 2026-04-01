@@ -10,9 +10,9 @@ Datum: Dezember 2025
 
 import logging
 from typing import Dict, Any, List, Optional
+from utils.whisper_context_manager import capture_whisper_progress
 
 logger = logging.getLogger(__name__)
-
 
 def format_timestamp(seconds: float) -> str:
     """
