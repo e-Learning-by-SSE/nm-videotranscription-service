@@ -21,7 +21,7 @@ class Config:
     HOST: str = "0.0.0.0"
     PORT: int = 5000
     DEBUG: bool = False
-    CORS_ALLOWED_ORIGINS: list[str] = ["*"]
+    CORS_ALLOWED_ORIGINS: list[str] = field(default_factory=lambda: ["*"])
 
     # Authentifizierung
     AUTH_SECRET_KEY: Optional[str] = None
