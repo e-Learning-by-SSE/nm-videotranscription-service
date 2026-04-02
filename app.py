@@ -203,7 +203,8 @@ def background_task(
                 logger.info(f"Task {task_id}: Audio erfolgreich extrahiert")
             else:
                 error_msg = "Video enthält keine Audio-Spur."
-                send_progress_fn(error_msg)
+                if realtime and client_sid:
+                    socketio.emit('error', {'task_id': task_id, 'message': error_msg}, to=client_sid)
                 logger.error(f"Task {task_id}: {error_msg}")
                 return
 
