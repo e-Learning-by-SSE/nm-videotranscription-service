@@ -111,6 +111,7 @@ def create_send_progress(client_sid, task_id, realtime=True):
 
 def save_transcription_to_backend(
     task_id: str,
+    video_url: str,
     transcription: Dict[str, Any],
     lesson_id: str,
     token: str
@@ -120,6 +121,7 @@ def save_transcription_to_backend(
 
     Args:
         task_id: Die ID der Aufgabe.
+        video_url: Die URL des Videos, zur Identifikation der Transkription.
         transcription: Die Transkriptionsdaten.
         lesson_id: Die ID der Lektion.
         token: Das Authentifizierungs-Token.
@@ -137,6 +139,7 @@ def save_transcription_to_backend(
             backend_url,
             json={
                 'task_id': task_id,
+                'video_url': video_url,
                 'transcription': transcription,
                 'lessonId': lesson_id
             },
@@ -222,7 +225,7 @@ def background_task(
                 socketio.emit('complete', result, to=client_sid)
                 logger.info(f"Task {task_id}: Ergebnis an Client gesendet")
             else:
-                save_transcription_to_backend(task_id, transcription, lesson_id, token)           
+                save_transcription_to_backend(task_id, video_url, transcription, lesson_id, token)           
 
     except FileNotFoundError as e:
         error_msg = f"Datei nicht gefunden: {e}"
