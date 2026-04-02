@@ -182,6 +182,7 @@ def background_task(
     """
     logger.info(f"Task {task_id}: Starte Transkription für {video_url}")
     send_progress_fn = create_send_progress(client_sid, task_id, realtime)
+    audio_file_path = None
 
     try:
         with tempfile.TemporaryDirectory() as tmpdirname:
@@ -221,7 +222,7 @@ def background_task(
                 socketio.emit('complete', result, to=client_sid)
                 logger.info(f"Task {task_id}: Ergebnis an Client gesendet")
             else:
-                save_transcription_to_backend(task_id, transcription, lesson_id, token)
+                save_transcription_to_backend(task_id, transcription, lesson_id, token)           
 
     except FileNotFoundError as e:
         error_msg = f"Datei nicht gefunden: {e}"
@@ -242,6 +243,17 @@ def background_task(
             socketio.emit('error', {'task_id': task_id, 'message': error_msg}, to=client_sid)
 
     finally:
+        # Temporäre Dateien bereinigen
+        if audio_file_path and os.path.exists(audio_file_path):
+            try:
+                os.remove(audio_file_path)
+                logger.debug(f"Task {task_id}: Audio-Datei gelöscht: {audio_file_path}")
+            except Exception as e:
+                logger.warning(
+                    f"Task {task_id}: Audio-Datei konnte nicht gelöscht werden: "
+                    f"{audio_file_path} - {e}"
+                )
+
         # Task aus der Verwaltung entfernen (thread-safe)
         with tasks_lock:
             if client_sid in tasks:
