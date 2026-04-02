@@ -21,7 +21,7 @@ class Config:
     HOST: str = "0.0.0.0"
     PORT: int = 5000
     DEBUG: bool = False
-    CORS_ALLOWED_ORIGINS: str | list[str] = "*"
+    CORS_ALLOWED_ORIGINS: Union[str, list[str]] = "*"
 
     cors_env = os.getenv("CORS_ALLOWED_ORIGINS")
 
