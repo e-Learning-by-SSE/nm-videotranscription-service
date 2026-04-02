@@ -10,7 +10,7 @@ Datum: Dezember 2025
 
 import os
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Union
 
 
 @dataclass
