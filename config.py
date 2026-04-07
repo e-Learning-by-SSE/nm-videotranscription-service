@@ -89,7 +89,7 @@ class Config:
         if not self.SAVE_SUBTITLE_ENDPOINT:
             errors.append("SAVE_SUBTITLE_ENDPOINT ist nicht konfiguriert")
 
-        if self.WHISPER_MODEL not in ["tiny", "base", "small", "medium", "large"]:
+        if self.WHISPER_MODEL not in ["tiny", "base", "small", "medium", "large", "large-v2", "large-v3", "turbo"]:
             errors.append(f"Ungültiges Whisper-Modell: {self.WHISPER_MODEL}")
 
         if errors:
